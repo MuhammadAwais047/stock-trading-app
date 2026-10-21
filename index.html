@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TICKR — paper trading desk</title>
+  <meta name="description" content="TICKR is a paper trading desk: a simulated market of 12 fictional stocks with live ticks, candlestick charts, watchlist, buy and sell orders, positions and P/L — all local, no real money.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23091019'/%3E%3Cpath d='M4 15.5 9 9l3.5 4.5L15.5 8l4.5 5' stroke='%2334d399' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="TICKR, paper trading desk">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 15.5 9 9l3.5 4.5L15.5 8l4.5 5" />
+          </svg>
+        </span>
+        <span class="brand-word">TICKR</span>
+        <span class="brand-tag">paper desk</span>
+      </a>
+
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+        </svg>
+        <input id="search" type="search" placeholder="Filter symbols or sectors" aria-label="Filter watchlist by symbol, name or sector" autocomplete="off">
+      </div>
+
+      <div class="topbar-actions">
+        <div class="cash-pill" id="cash-pill" title="Available buying power">
+          <span class="cash-label">Cash</span>
+          <span id="cash-value">$10,000.00</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="tape-wrap">
+    <div class="tape" id="tape" aria-hidden="true"></div>
+    <p class="sr-only">Live tape tracking 12 fictional symbols with simulated prices.</p>
+  </div>
+
+  <main class="wrap" id="main">
+    <section class="kpis" id="kpis" aria-label="Portfolio summary"></section>
+
+    <div class="desk-grid">
+      <aside class="card watchlist-card" aria-labelledby="wl-head">
+        <div class="card-head">
+          <h2 id="wl-head">Watchlist</h2>
+          <span class="card-note" id="wl-count">12 symbols</span>
+        </div>
+        <div class="wl-rows" id="wl-rows" role="listbox" aria-label="Symbols"></div>
+      </aside>
+
+      <section class="card chart-card" aria-labelledby="sym-name">
+        <div class="sym-head">
+          <div class="sym-id">
+            <h1 id="sym-name">—</h1>
+            <p class="sym-meta" id="sym-meta"></p>
+          </div>
+          <div class="sym-quote">
+            <div class="sym-price" id="sym-price">—</div>
+            <div class="sym-change" id="sym-change"></div>
+          </div>
+        </div>
+
+        <div class="tf-row" id="tf-row" role="group" aria-label="Chart timeframe">
+          <button class="tf-btn is-active" data-tf="1D" type="button">1D</button>
+          <button class="tf-btn" data-tf="1W" type="button">1W</button>
+          <button class="tf-btn" data-tf="1M" type="button">1M</button>
+          <button class="tf-btn" data-tf="3M" type="button">3M</button>
+          <button class="tf-btn" data-tf="1Y" type="button">1Y</button>
+        </div>
+
+        <div class="chart-wrap" id="chart-wrap">
+          <svg id="chart" role="img" aria-label="Candlestick chart with volume"></svg>
+          <div class="chart-tip" id="chart-tip" hidden></div>
+          <div class="chart-price" id="chart-price" hidden></div>
+        </div>
+
+        <div class="chart-stats" id="chart-stats"></div>
+      </section>
+
+      <aside class="card trade-card" aria-labelledby="trade-head">
+        <div class="card-head">
+          <h2 id="trade-head">Order ticket</h2>
+          <span class="card-note">market · $0 fee</span>
+        </div>
+
+        <div class="trade-tabs" role="tablist" aria-label="Order side">
+          <button class="trade-tab is-active" data-side="buy" type="button" role="tab" aria-selected="true">Buy</button>
+          <button class="trade-tab" data-side="sell" type="button" role="tab" aria-selected="false">Sell</button>
+        </div>
+
+        <div class="trade-sym-row">
+          <button class="trade-sym" id="trade-sym" type="button" title="Switch to this symbol in the chart"></button>
+        </div>
+        <div class="trade-quote" id="trade-quote"></div>
+
+        <label class="field-label" for="shares-input">Shares</label>
+        <div class="shares-row">
+          <button class="shares-step" id="shares-minus" type="button" aria-label="Remove one share">−</button>
+          <input id="shares-input" type="number" min="1" step="1" value="1" inputmode="numeric" aria-live="polite">
+          <button class="shares-step" id="shares-plus" type="button" aria-label="Add one share">+</button>
+        </div>
+
+        <div class="quick-row" id="quick-row">
+          <button class="quick-btn" data-frac="0.25" type="button">25%</button>
+          <button class="quick-btn" data-frac="0.5" type="button">50%</button>
+          <button class="quick-btn" data-frac="1" type="button">Max</button>
+        </div>
+
+        <dl class="order-summary" id="order-summary"></dl>
+
+        <button class="place-btn" id="place-order" type="button">Place buy order</button>
+        <p class="trade-hint" id="trade-hint">Simulated fill at the live tape price.</p>
+      </aside>
+    </div>
+
+    <div class="bottom-grid">
+      <section class="card positions-card" aria-labelledby="pos-head">
+        <div class="card-head">
+          <h2 id="pos-head">Positions</h2>
+          <span class="card-note" id="pos-note">no open positions</span>
+        </div>
+        <div class="table-scroll">
+          <table class="pos-table">
+            <thead>
+              <tr>
+                <th scope="col">Symbol</th>
+                <th scope="col" class="num">Shares</th>
+                <th scope="col" class="num">Avg cost</th>
+                <th scope="col" class="num">Price</th>
+                <th scope="col" class="num">Value</th>
+                <th scope="col" class="num">Day</th>
+                <th scope="col" class="num">P/L</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody id="pos-body"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="pos-empty" hidden>
+          <p>No open positions yet.</p>
+          <p class="empty-sub">Pick a symbol from the watchlist and place your first buy order.</p>
+        </div>
+      </section>
+
+      <section class="card txns-card" aria-labelledby="txn-head">
+        <div class="card-head">
+          <h2 id="txn-head">Orders</h2>
+          <div class="head-actions">
+            <span class="card-note" id="txn-note">0 filled</span>
+            <button class="link-btn" id="reset-btn" type="button">Reset portfolio</button>
+          </div>
+        </div>
+        <div class="txn-list" id="txn-list"></div>
+        <div class="empty" id="txn-empty" hidden>
+          <p>No orders yet.</p>
+          <p class="empty-sub">Filled market orders will appear here with full details.</p>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <div class="foot-inner">
+        <p>TICKR is a paper-trading simulator. Every price is generated locally — the market is fictional and no real money is involved.</p>
+        <a href="https://github.com/MuhammadAwais047/stock-trading-app" target="_blank" rel="noopener">Source on GitHub</a>
+      </div>
+    </footer>
+  </main>
+
+  <dialog id="confirm-dialog" class="confirm" aria-labelledby="confirm-title">
+    <div class="confirm-inner">
+      <h2 id="confirm-title">Review order</h2>
+      <dl class="confirm-grid" id="confirm-grid"></dl>
+      <p class="confirm-note" id="confirm-note"></p>
+      <div class="confirm-actions">
+        <button class="btn-ghost" id="confirm-cancel" type="button">Cancel</button>
+        <button class="confirm-btn" id="confirm-go" type="button">Confirm buy</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
+  <div id="live" class="sr-only" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
