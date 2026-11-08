@@ -183,7 +183,22 @@
           state.positions[sym] = { shares: Math.floor(pos.shares), cost: pos.cost };
         }
       }
-      state.txns = data.txns.filter(t => t && stockBy[t.sym] && (t.side === "buy" || t.side === "sell")).slice(0, MAX_TXNS);
+      state.txns = data.txns
+        .filter(t => t && stockBy[t.sym] && (t.side === "buy" || t.side === "sell"))
+        .map(t => ({
+          id: typeof t.id === "string" ? t.id : "",
+          side: t.side,
+          sym: t.sym,
+          shares: Number(t.shares),
+          price: Number(t.price),
+          total: Number(t.total),
+          ts: Number(t.ts),
+        }))
+        .filter(t => Number.isFinite(t.shares) && t.shares > 0 &&
+          Number.isFinite(t.price) && t.price >= 0 &&
+          Number.isFinite(t.total) && t.total >= 0 &&
+          Number.isFinite(t.ts) && t.ts > 0)
+        .slice(0, MAX_TXNS);
       if (Array.isArray(data.stars)) {
         state.stars = data.stars.filter(s => stockBy[s]);
       }
@@ -616,15 +631,40 @@
   function renderTxns() {
     els["txn-empty"].hidden = state.txns.length > 0;
     els["txn-note"].textContent = state.txns.length + (state.txns.length === 1 ? " filled" : " filled");
-    els["txn-list"].innerHTML = state.txns.map(t => `
-      <div class="txn-row ${t.side}">
-        <span class="txn-bar" aria-hidden="true"></span>
-        <span class="txn-main">
-          <span class="txn-title">${t.side === "buy" ? "Bought" : "Sold"} <b>${t.shares} ${t.sym}</b></span>
-          <span class="txn-time">${fmtTime(t.ts)} · @ ${t.price.toFixed(2)}</span>
-        </span>
-        <span class="txn-total ${t.side === "buy" ? "up" : "down"}">${fmtMoney(t.total)}<small>${t.side === "buy" ? "spent" : "received"}</small></span>
-      </div>`).join("");
+    els["txn-list"].replaceChildren(...state.txns.map(t => {
+      const row = document.createElement("div");
+      row.className = `txn-row ${t.side}`;
+
+      const bar = document.createElement("span");
+      bar.className = "txn-bar";
+      bar.setAttribute("aria-hidden", "true");
+
+      const main = document.createElement("span");
+      main.className = "txn-main";
+
+      const title = document.createElement("span");
+      title.className = "txn-title";
+      title.textContent = `${t.side === "buy" ? "Bought" : "Sold"} `;
+      const strong = document.createElement("b");
+      strong.textContent = `${t.shares} ${t.sym}`;
+      title.append(strong);
+
+      const time = document.createElement("span");
+      time.className = "txn-time";
+      time.textContent = `${fmtTime(t.ts)} · @ ${t.price.toFixed(2)}`;
+
+      main.append(title, time);
+
+      const total = document.createElement("span");
+      total.className = `txn-total ${t.side === "buy" ? "up" : "down"}`;
+      total.textContent = fmtMoney(t.total);
+      const small = document.createElement("small");
+      small.textContent = t.side === "buy" ? "spent" : "received";
+      total.append(small);
+
+      row.append(bar, main, total);
+      return row;
+    }));
   }
 
   // ---------- Trading ----------
